@@ -9,6 +9,7 @@ import sys
 import time
 import linkedList
 import sns
+import monitor 
 
 iptables = iptablelib.IpTablesLib('100.61.0.1', '10.1.1.199')
 iptables.installIpTableNorth('10.1.1.77', 8000, 25000)
@@ -95,26 +96,28 @@ def parse_connections(Q1):
               if 'UNDEF' not in str(item):
                 l.add(item)
                 log.info("New connection %s" %(str(item)))
-                new_list = mysql.mysql_query_esc_tbl(sessions)
-                lenList = len(new_list)
-                log.debug(lenList)
+                #new_list = mysql.mysql_query_esc_tbl(sessions)
+                #lenList = len(new_list)
+                #log.debug(lenList)
                 ssh_port = mysql.mysql_fetch_query_port_no(str(item))
                 log.info("Assigned port is %d" %(ssh_port))
                 log.info(sessions[item])
                 newdata = sessions[item]
-                if lenList > 0:
-                  ssh_port = mysql.mysql_new_insert_query(newdata)
-                  iptables.installIpTableSouth(str(newdata['local_ip']), 22, ssh_port)
-                  status = mysql.mysql_get_deploy_status(newdata['username'])
-                  if status == 0:
-                    d_list = mysql.mysql_select_deploy_list(newdata['username'])
-                    sns.notify_sms(newdata['username'],d_list[0],str(d_list[1]))
-                    sns.notify_email(newdata['username'],d_list[0],str(d_list[1]))
-                elif lenList == 0:
-                  log.info("IP for connection is %s" %(str(newdata['local_ip'])))
-                  iptables.installIpTableSouth(str(newdata['local_ip']), 22, ssh_port)
-                else:
-                  pass
+                #if lenList > 0:
+                log.info("Insert new connection into mysql db for %s" %(newdata['username']))
+                mysql.mysql_new_insert_query(newdata)
+                status = mysql.mysql_get_deploy_status(newdata['username'])
+                if status == 0:
+                  d_list = mysql.mysql_select_deploy_list(newdata['username'])
+                  sns.notify_sms(newdata['username'],d_list[0],str(d_list[1]))
+                  sns.notify_email(newdata['username'],d_list[0],str(d_list[1]))
+                log.info("IP for connection is %s" %(str(newdata['local_ip'])))
+                iptables.installIpTableSouth(str(newdata['local_ip']), 22, ssh_port)
+                #elif lenList == 0:
+                  #log.info("IP for connection is %s" %(str(newdata['local_ip'])))
+                  #iptables.installIpTableSouth(str(newdata['local_ip']), 22, ssh_port)
+                #else:
+                #  pass
                 
       else:
 #verify for connection drop
@@ -130,10 +133,12 @@ def parse_connections(Q1):
             if drop is not 'UNDEF':
               ssh_port = mysql.mysql_fetch_query_port_no(str(drop))
               local_ip = mysql.mysql_query_local_ip(str(drop))
+              monitor.client_list[str(drop)] = 0
               log.warn("Connection drop for %s port %s" %(local_ip, ssh_port))
               log.warn("Clean up iptable for %s IP: %s and port: %d" %(str(drop), str(local_ip), int(ssh_port)))
               iptables.deleteIpTableSouth(str(local_ip), 22, ssh_port)
               l.deleteNode(drop)
+              mysql.mysql_delete_row_esc_tbl(str(drop))
 
 #update the list with sessions
           for item in sessions:

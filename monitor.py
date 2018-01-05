@@ -346,7 +346,7 @@ class OpenvpnMgmtInterface(object):
                 else:
                   log.debug("Update client list in dict %s" %(str(session['username'])))
                   esc_name = str(session['username'])
-                  if esc_name is not 'UNDEF':
+                  if esc_name != 'UNDEF':
                     client_list[esc_name] = client_id_mgr.getNextAvailableId() 
 
             if routes_section:
@@ -746,7 +746,7 @@ class Counter(object):
             self.value = self.value + 1
             for k, v in client_list.items():
               if v == idx:
-                log.info("[%d] set the heart beat counter in sql db" %(idx))
+                log.debug("[%d] set the heart beat counter in sql db" %(idx))
                 mysql_queries.mysql_query_update_hb_esc_tbl(count,k)
         finally:
             log.debug('Released a lock')
@@ -879,8 +879,9 @@ if __name__ == '__main__':
   P4.join()
 
   log.debug("<<<Done>>>")
+"""
 else:
-  from bottle import response, request, get, post, static_file, default_app
+  #from bottle import response, request, get, post, static_file, default_app
 
   class args(object):
       debug = False
@@ -923,3 +924,4 @@ else:
   @get('/<filename:re:.*\.(jpg|png)>')
   def images(filename):
       return static_file(filename, root=images_dir)
+"""

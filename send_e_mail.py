@@ -13,6 +13,12 @@ log = log_m.logger()
 
 """ update daily ESC information via email to Sarath for now """
 
+def update_process_via_email():
+  py_subject = "Alert: logstash terminated"
+  py_message = "Logstash killed.. please restart.. "
+  response = client.list_subscriptions_by_topic(TopicArn='arn:aws:sns:us-west-2:796687173965:alert_esc_daily_update', NextToken='')
+  log.debug(response)
+  response = client.publish(TopicArn='arn:aws:sns:us-west-2:796687173965:alert_esc_daily_update', Message=py_message, Subject=py_subject, MessageStructure='Raw')
 # Notify deployment details regarding e-mail
 
 def update_esc_via_email():

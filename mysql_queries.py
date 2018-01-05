@@ -208,8 +208,11 @@ def mysql_query_local_ip(esc_name):
     query = "SELECT * from esc_tbl WHERE esc_name='%s'" % esc_name
     cursor.execute(query)
     row = cursor.fetchone()
-    local_ip = (list(row)[3])
-    log.debug("[%s] retrieve ip %s" %(esc_name, local_ip))
+    if row is not None:
+      local_ip = (list(row)[3])
+      log.debug("[%s] retrieve ip %s" %(esc_name, local_ip))
+    else:
+      log.warn("%s is not found in sqldb" %(local_ip))
     conn.close()
     cursor.close()
     return local_ip 
@@ -252,7 +255,7 @@ def mysql_insert_query(sessions, flag):
 def mysql_new_insert_query(session):
     conn = connect()
     cursor = conn.cursor()
-    esc_queue.esc_thread_handler(session['username'], session['city'])
+    #esc_queue.esc_thread_handler(session['username'], session['city'])
     sql = "INSERT INTO esc_tbl VALUES('%s', '%d', '%d', '%s', '%s', '%s', '%s', '%d', '%s', '%s')" % ( session['username'], int(session['bytes_sent']), int(session['bytes_recv']), session['local_ip'], session['remote_ip'], session['connected_since'], "UP", 0,'v1.0', 'v1.0')
     cursor.execute(sql)
     conn.commit()
@@ -270,6 +273,22 @@ def mysql_update_deploy_status(status, esc_i_d):
     conn.commit()
     conn.close()
     cursor.close()
+
+
+def mysql_delete_row_esc_tbl(esc_id):
+  log.info("mysql_delete_row_esc_tbl() called for %s" %(esc_id))
+  try:
+    conn = connect()
+    cursor = conn.cursor()
+    query = "DELETE FROM esc_tbl where esc_name=%s"
+    cursor.execute(query, (esc_id,))
+    conn.commit()
+  except Error as error:
+    print(error)
+
+  finally:
+    cursor.close()
+    conn.close()
 
 
 # MySQL query to fetch the siteId and Label no from Deploy table
